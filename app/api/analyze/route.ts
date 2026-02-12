@@ -5,17 +5,18 @@
   el navegador hace un POST a esta ruta con el archivo.
 
   Flujo:
-  1. Recibe el PDF como FormData (la forma estándar de enviar archivos)
-  2. Extrae el texto del PDF usando pdf-parser
+  1. Recibe el PDF como FormData
+  2. Extrae el texto del PDF
   3. Envía el texto a Gemini para categorización
   4. Devuelve el JSON con los resultados
-
-  Este código SOLO se ejecuta en el servidor (nunca en el navegador).
 */
 
 import { NextRequest, NextResponse } from "next/server";
 import { extractTextFromPDF } from "@/lib/pdf-parser";
 import { analyzeWithGemini } from "@/lib/gemini";
+
+// Permite hasta 60 segundos (Gemini puede tardar un poco)
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         { error: "No se recibió ningún archivo PDF." },
-        { status: 400 } // 400 = Bad Request (error del usuario)
+        { status: 400 }
       );
     }
 
@@ -43,7 +44,16 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = Buffer.from(arrayBuffer);
 
     // 3. Extrae el texto del PDF
-    const pdfText = await extractTextFromPDF(pdfBuffer);
+    let pdfText: string;
+    try {
+      pdfText = await extractTextFromPDF(pdfBuffer);
+    } catch (pdfError) {
+      console.error("Error extrayendo texto del PDF:", pdfError);
+      return NextResponse.json(
+        { error: "No se pudo leer el PDF. Verificá que no esté dañado o protegido con contraseña." },
+        { status: 400 }
+      );
+    }
 
     // 4. Envía el texto a Gemini para análisis
     const analysis = await analyzeWithGemini(pdfText);
@@ -51,7 +61,6 @@ export async function POST(request: NextRequest) {
     // 5. Devuelve los resultados como JSON
     return NextResponse.json(analysis);
   } catch (error) {
-    // Si algo falla, devuelve un mensaje de error claro
     console.error("Error procesando PDF:", error);
 
     const message =
@@ -62,10 +71,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
-// Configuración: permite archivos de hasta 10 MB
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

@@ -64,10 +64,15 @@ export default function HomePage() {
         body: formData,
       });
 
+      // Verifica que la respuesta sea JSON antes de parsearla
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("El servidor no respondió correctamente. Intentá de nuevo.");
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
-        // Si el servidor devolvió un error, lo mostramos
         throw new Error(data.error || "Error procesando el archivo.");
       }
 

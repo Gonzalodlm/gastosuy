@@ -1,29 +1,35 @@
 /*
   pdf-parser.ts - Extracción de texto de PDFs
 
-  Este módulo recibe un archivo PDF (como Buffer de bytes) y devuelve
-  todo el texto que contiene como un string.
-
-  Usa la librería "pdf-parse" que internamente lee la estructura del PDF
-  y extrae el texto de cada página.
-
-  Solo se ejecuta en el servidor (nunca en el navegador del usuario).
+  Usa pdfjs-dist (la misma librería que usa Firefox para leer PDFs).
+  Es compatible con Vercel serverless.
 */
 
-import { PDFParse } from "pdf-parse";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
-  // PDFParse recibe los bytes del PDF como Uint8Array en el constructor
-  const pdfParse = new PDFParse({ data: new Uint8Array(pdfBuffer) });
+  // Carga el PDF desde los bytes
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(pdfBuffer),
+    useSystemFonts: true,
+  });
 
-  // getText() carga el PDF internamente y extrae todo el texto
-  const result = await pdfParse.getText();
+  const pdf = await loadingTask.promise;
+  const textParts: string[] = [];
 
-  // result.text contiene todo el texto del PDF concatenado
-  const text = result.text || "";
+  // Recorre cada página y extrae el texto
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .map((item: unknown) => (item as { str?: string }).str || "")
+      .join(" ");
+    textParts.push(pageText);
+  }
 
-  // Liberamos los recursos del PDF
-  await pdfParse.destroy();
+  await pdf.destroy();
+
+  const text = textParts.join("\n");
 
   if (text.trim().length === 0) {
     throw new Error(
