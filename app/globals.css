@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+  Estilos globales de GastosUY
+  Usamos Tailwind CSS para casi todo, pero acá van estilos base
+*/
+
+:root {
+  --azul-oscuro: #0f172a;
+  --azul-medio: #1e3a5f;
+  --verde-acento: #10b981;
+  --verde-claro: #d1fae5;
+  --rojo-gasto: #ef4444;
+  --gris-fondo: #f8fafc;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--gris-fondo);
+  color: var(--azul-oscuro);
+}
+
+/* Animación de loading (el spinner que se muestra mientras procesa) */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Animación de pulso para el estado de "procesando" */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

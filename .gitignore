@@ -1,0 +1,14 @@
+# dependencias
+/node_modules
+
+# build de Next.js
+/.next
+/out
+
+# variables de entorno (NUNCA subir esto a git)
+.env*.local
+
+# sistema
+.DS_Store
+*.pem
+Thumbs.db
