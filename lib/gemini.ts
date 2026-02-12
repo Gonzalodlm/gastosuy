@@ -1,19 +1,17 @@
 /*
   gemini.ts - Integración con Google Gemini API
 
-  Este módulo envía el texto extraído del PDF a Gemini (IA de Google)
-  y recibe de vuelta un JSON con los movimientos categorizados.
-
-  Gemini analiza el texto, identifica cada transacción, y la categoriza
-  en las categorías que definimos (Supermercado, Transporte, etc.)
+  Envía el PDF directamente a Gemini (sin extraer texto primero).
+  Gemini 2.5 Flash puede leer PDFs nativamente, lo que es más
+  confiable y funciona perfecto en Vercel serverless.
 
   Solo se ejecuta en el servidor para proteger la API key.
 */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// El prompt que le damos a Gemini - le explica exactamente qué hacer
-const SYSTEM_PROMPT = `Sos un asistente financiero experto en Uruguay. Te voy a dar el texto extraído de un estado de cuenta bancario o de tarjeta de crédito de Uruguay.
+// El prompt que le damos a Gemini
+const SYSTEM_PROMPT = `Sos un asistente financiero experto en Uruguay. Te voy a dar un PDF de un estado de cuenta bancario o de tarjeta de crédito de Uruguay.
 
 Tu tarea es:
 1. Identificar cada movimiento/transacción
@@ -52,10 +50,7 @@ Tu tarea es:
   "moneda": "UYU"
 }
 
-IMPORTANTE: Respondé SOLO con el JSON, sin backticks, sin texto adicional.
-
-Acá está el texto del estado de cuenta:
-`;
+IMPORTANTE: Respondé SOLO con el JSON, sin backticks, sin texto adicional.`;
 
 // Tipos TypeScript para la respuesta de Gemini
 export interface Movimiento {
@@ -84,7 +79,7 @@ export interface AnalisisResultado {
 }
 
 export async function analyzeWithGemini(
-  pdfText: string
+  pdfBuffer: Buffer
 ): Promise<AnalisisResultado> {
   // Obtiene la API key de las variables de entorno
   const apiKey = process.env.GEMINI_API_KEY;
@@ -100,8 +95,20 @@ export async function analyzeWithGemini(
   // Usa el modelo gemini-2.5-flash (gratuito y rápido)
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  // Envía el prompt + el texto del PDF a Gemini
-  const result = await model.generateContent(SYSTEM_PROMPT + pdfText);
+  // Convierte el PDF a base64 para enviarlo como archivo inline
+  const pdfBase64 = pdfBuffer.toString("base64");
+
+  // Envía el PDF + el prompt a Gemini
+  const result = await model.generateContent([
+    {
+      inlineData: {
+        mimeType: "application/pdf",
+        data: pdfBase64,
+      },
+    },
+    { text: SYSTEM_PROMPT },
+  ]);
+
   const response = result.response;
   const text = response.text();
 
