@@ -2,16 +2,22 @@
   pdf-parser.ts - Extracción de texto de PDFs
 
   Usa pdfjs-dist (la misma librería que usa Firefox para leer PDFs).
-  Es compatible con Vercel serverless.
+  Configurado para funcionar en Vercel serverless (sin worker threads).
 */
 
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
+// Deshabilitar el worker thread (no existe en serverless)
+pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+
 export async function extractTextFromPDF(pdfBuffer: Buffer): Promise<string> {
   // Carga el PDF desde los bytes
+  // disableFontFace y isEvalSupported=false son necesarios en serverless
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(pdfBuffer),
     useSystemFonts: true,
+    disableFontFace: true,
+    isEvalSupported: false,
   });
 
   const pdf = await loadingTask.promise;
