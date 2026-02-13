@@ -92,7 +92,7 @@ export async function analyzeWithGemini(
   // Crea el cliente de Gemini
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // Usa el modelo gemini-2.5-flash (gratuito y rápido)
+  // Usa el modelo gemini-2.5-flash (gratuito y preciso)
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   // Convierte el PDF a base64 para enviarlo como archivo inline
