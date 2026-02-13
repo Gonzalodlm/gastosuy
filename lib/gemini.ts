@@ -99,15 +99,28 @@ export async function analyzeWithGemini(
   const pdfBase64 = pdfBuffer.toString("base64");
 
   // Envía el PDF + el prompt a Gemini
-  const result = await model.generateContent([
-    {
-      inlineData: {
-        mimeType: "application/pdf",
-        data: pdfBase64,
+  let result;
+  try {
+    result = await model.generateContent([
+      {
+        inlineData: {
+          mimeType: "application/pdf",
+          data: pdfBase64,
+        },
       },
-    },
-    { text: SYSTEM_PROMPT },
-  ]);
+      { text: SYSTEM_PROMPT },
+    ]);
+  } catch (apiError) {
+    const errorMsg = apiError instanceof Error ? apiError.message : "";
+    if (errorMsg.includes("429") || errorMsg.includes("quota") || errorMsg.includes("Too Many")) {
+      throw new Error(
+        "Se alcanzó el límite de uso de la API. Esperá 1 minuto e intentá de nuevo."
+      );
+    }
+    throw new Error(
+      "Error conectando con Gemini. Intentá de nuevo en unos segundos."
+    );
+  }
 
   const response = result.response;
   const text = response.text();
