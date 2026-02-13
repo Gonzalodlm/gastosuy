@@ -92,8 +92,8 @@ export async function analyzeWithGemini(
   // Crea el cliente de Gemini
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // Usa gemini-2.0-flash (gratuito, rápido, ideal para extraer datos de PDFs)
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  // Usa gemini-2.5-flash (gratuito y preciso)
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   // Convierte el PDF a base64 para enviarlo como archivo inline
   const pdfBase64 = pdfBuffer.toString("base64");
